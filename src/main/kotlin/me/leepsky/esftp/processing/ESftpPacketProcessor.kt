@@ -9,12 +9,13 @@ import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.readBytes
 
 open class ESftpPacketProcessor: SftpPacketProcessor {
 
     private val dirHandles = mutableMapOf<String, Path?>()
 
-    private val fileHandles = mutableMapOf<String, Path>()
+    private val fileHandles = mutableMapOf<String, ByteArray>()
 
     override fun process(packet: SftpPacket): SftpPacket {
         return when (packet) {
@@ -56,16 +57,22 @@ open class ESftpPacketProcessor: SftpPacketProcessor {
         }
 
         val handle = UUID.randomUUID().toString()
-        fileHandles[handle] = path
+        fileHandles[handle] = path.readBytes()
 
         return SftpPacket102(packet.id, handle)
     }
 
     /**
-     * Process SSH_FXP_CLOSE. Here, it's just a placeholder, always responds with SSH_FXP_STATUS
-     * with status SSH_FX_OK.
+     * Process SSH_FXP_CLOSE.
+     *
+     * For handles created by SSH_FXP_OPENDIR - does nothing, always returns SSH_FX_OK.
+     * For handles created by SSH_FXP_OPEN - clears the memory, returns SSH_FX_OK.
      */
     protected open fun process(packet: SftpPacket4): SftpPacket101 {
+        if (packet.handle in fileHandles) {
+            fileHandles.remove(packet.handle)
+        }
+
         return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_OK,
                  "All good.", Locale.ENGLISH)
     }
@@ -79,12 +86,16 @@ open class ESftpPacketProcessor: SftpPacketProcessor {
                 "Invalid handle.", Locale.ENGLISH)
         }
 
-        var data = fileHandles[handle]!!
-            .toFile()
-            .readBytes()
-        data = when (val lIndex = packet.offset.toInt() + packet.len) {
-            in 0..data.size -> data.copyOfRange(packet.offset.toInt(), lIndex)
-            else -> data.copyOfRange(packet.offset.toInt(), data.size)
+        val byteArray = fileHandles[handle]!!
+
+        if (packet.offset > byteArray.size) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_EOF,
+                "EOF.", Locale.ENGLISH)
+        }
+
+        val data = when (val lIndex = packet.offset.toInt() + packet.len) {
+            in 0..byteArray.size -> byteArray.copyOfRange(packet.offset.toInt(), lIndex)
+            else -> byteArray.copyOfRange(packet.offset.toInt(), byteArray.size)
         }
 
         return SftpPacket103(packet.id, data)
