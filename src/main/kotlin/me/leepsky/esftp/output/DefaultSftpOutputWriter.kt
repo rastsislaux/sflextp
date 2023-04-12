@@ -80,14 +80,17 @@ open class DefaultSftpOutputWriter: SftpOutputWriter {
 
         var length = 9 // Length of Type ID + Request ID + Content Size
         for (it in packet.content) {
-            val pathBytes = it.key.toByteArray()
-            val attrsBytes = it.value.toByteArray()
-            length += pathBytes.size + attrsBytes.size + 4 // 4 is the size of string length
+            val filenameBytes = it.filename.toByteArray()
+            val longnameBytes = it.longname.toByteArray()
+            val attrsBytes = it.attrs.toByteArray()
+
+            length += filenameBytes.size + longnameBytes.size + attrsBytes.size + 8 // 8 is the size of string lengths
             bytes
-                .putInt(pathBytes.size)
-                .put(pathBytes)
+                .putInt(filenameBytes.size)
+                .put(filenameBytes)
+                .putInt(longnameBytes.size)
+                .put(longnameBytes)
                 .put(attrsBytes)
-            break
         }
 
         packet.endOfList?.let {

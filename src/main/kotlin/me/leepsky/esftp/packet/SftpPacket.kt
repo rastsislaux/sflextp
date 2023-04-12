@@ -143,6 +143,6 @@ data class SftpPacket102(
  */
 data class SftpPacket104(
     val requestId: Int,
-    val content: Map<String, FileAttributes>,
+    val content: List<SftpFile>,
     val endOfList: Boolean?
 ): SftpPacket(SftpPacketType.SSH_FXP_NAME)

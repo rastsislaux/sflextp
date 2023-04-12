@@ -10,6 +10,8 @@ import kotlin.io.path.Path
 
 open class SftpPacketProcessor {
 
+    private val dirHandles = mutableMapOf<String, Path?>()
+
     fun process(packet: SftpPacket): SftpPacket {
         return when (packet) {
             is SftpPacket1 -> process(packet)
@@ -38,20 +40,32 @@ open class SftpPacketProcessor {
                      "Not a directory.", Locale.ENGLISH)
         }
 
-        return SftpPacket102(packet.requestId, path.toString())
+        val handle = UUID.randomUUID().toString()
+        dirHandles[handle] = path
+
+        return SftpPacket102(packet.requestId, handle)
     }
 
     protected open fun process(packet: SftpPacket12): SftpPacket {
-        val path = Path(packet.handle)
+        val handle = packet.handle
 
-        if (!Files.isDirectory(path)) {
+        if (handle !in dirHandles) {
             return SftpPacket101(packet.requestId, SftpPacket101.Companion.StatusCode.SSH_FX_INVALID_HANDLE,
-                "Not a directory.", Locale.ENGLISH)
+                "Invalid handle.", Locale.ENGLISH)
         }
 
-        val files = Files.list(path).toList().associate { it.toString() to getFileAttributes(it) }
+        if (dirHandles[handle] == null) {
+            dirHandles.remove(handle)
+            return SftpPacket101(packet.requestId, SftpPacket101.Companion.StatusCode.SSH_FX_EOF,
+                "EOF.", Locale.ENGLISH)
+        }
 
-        return SftpPacket104(packet.requestId, files, false)
+        val files = Files.list(dirHandles[handle])
+            .map { SftpFile(it.fileName.toString(), it.toString(), getFileAttributes(it)) }
+            .toList()
+        dirHandles[handle] = null
+
+        return SftpPacket104(packet.requestId, files, true)
     }
 
     protected open fun process(packet: SftpPacket16): SftpPacket104 {
@@ -59,7 +73,7 @@ open class SftpPacketProcessor {
 
         return SftpPacket104(
             packet.requestId,
-            mapOf(path.toString() to getFileAttributes(path)),
+            listOf(SftpFile(path.toString(), path.toString(), getFileAttributes(path))),
             true
         )
     }

@@ -53,7 +53,7 @@ class MySftpSubsystem(
 
     override fun run() {
         while (!destroyed) {
-                mainLoop()
+            mainLoop()
         }
     }
 
@@ -62,5 +62,9 @@ class MySftpSubsystem(
         err.flush()
     }
 
-    private fun mainLoop() = out.write(processor.process(inp.read()))
+    private fun mainLoop() {
+        val packet = inp.read()
+        println(packet)
+        out.write(processor.process(packet))
+    }
 }
