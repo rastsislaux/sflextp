@@ -14,7 +14,9 @@ open class ESftpOutputWriter: SftpOutputWriter {
             is SftpPacket2 -> writePacket(packet)
             is SftpPacket101 -> writePacket(packet)
             is SftpPacket102 -> writePacket(packet)
+            is SftpPacket103 -> writePacket(packet)
             is SftpPacket104 -> writePacket(packet)
+            is SftpPacket105 -> writePacket(packet)
             else -> TODO("Writing this packet is not yet supported.")
         }
     }
@@ -44,7 +46,7 @@ open class ESftpOutputWriter: SftpOutputWriter {
         val bytes = ByteBuffer.allocate(length + 4) // Length + 4 bytes of length itself
             .putInt(length)
             .put(packet.typeId.toByte())
-            .putInt(packet.requestId)
+            .putInt(packet.id)
             .putInt(packet.statusCode.value)
             .putInt(errorMessageBytes.size)
             .put(errorMessageBytes)
@@ -62,9 +64,24 @@ open class ESftpOutputWriter: SftpOutputWriter {
         val bytes = ByteBuffer.allocate(13 + handleBytes.size) // Length of Type ID + Request ID + Handle length
             .putInt(9 + handleBytes.size)
             .put(packet.typeId.toByte())
-            .putInt(packet.requestId)
+            .putInt(packet.id)
             .putInt(handleBytes.size)
             .put(handleBytes)
+            .array()
+
+        out.write(bytes)
+        out.flush()
+    }
+
+    protected open fun writePacket(packet: SftpPacket103) {
+        val length = 9 + packet.data.size
+
+        val bytes = ByteBuffer.allocate(length + 4)
+            .putInt(length)
+            .put(packet.typeId.toByte())
+            .putInt(packet.id)
+            .putInt(packet.data.size)
+            .put(packet.data)
             .array()
 
         out.write(bytes)
@@ -75,7 +92,7 @@ open class ESftpOutputWriter: SftpOutputWriter {
         val bytes = ByteBuffer.allocate(1024) // Chosen at random
             .putInt(0) // Length is unknown at this point
             .put(packet.typeId.toByte())
-            .putInt(packet.requestId)
+            .putInt(packet.id)
             .putInt(packet.content.size)
 
         var length = 9 // Length of Type ID + Request ID + Content Size
@@ -101,6 +118,21 @@ open class ESftpOutputWriter: SftpOutputWriter {
         bytes.putInt(0, length)
 
         out.write(bytes.array().copyOfRange(0, length + 4))
+        out.flush()
+    }
+
+    protected open fun writePacket(packet: SftpPacket105) {
+        val attrsBytes = packet.attrs.toByteArray()
+        val length = 5 + attrsBytes.size
+
+        val bytes = ByteBuffer.allocate(length + 4)
+            .putInt(length)
+            .put(packet.typeId.toByte())
+            .putInt(packet.id)
+            .put(attrsBytes)
+            .array()
+
+        out.write(bytes)
         out.flush()
     }
 

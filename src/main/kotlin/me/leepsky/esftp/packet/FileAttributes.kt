@@ -28,28 +28,10 @@ object ValidAttributeMask {
  * server.
  */
 data class FileAttributes(
-    val validAttributeFlags: Int,
-    val type: Type
+    val validAttributeFlags: Int
 ) {
 
     fun toByteArray(): ByteArray = ByteBuffer.allocate(4)
         .putInt(validAttributeFlags)
         .array()
-
-    companion object {
-
-        enum class Type(val value: Int) {
-            SSH_FILEXFER_TYPE_REGULAR(1),
-            SSH_FILEXFER_TYPE_DIRECTORY(2),
-            SSH_FILEXFER_TYPE_SYMLINK(3),
-            SSH_FILEXFER_TYPE_SPECIAL(4),
-            SSH_FILEXFER_TYPE_UNKNOWN(5),
-            SSH_FILEXFER_TYPE_SOCKET(6),
-            SSH_FILEXFER_TYPE_CHAR_DEVICE(7),
-            SSH_FILEXFER_TYPE_BLOCK_DEVICE(8),
-            SSH_FILEXFER_TYPE_FIFO(9)
-        }
-
-    }
-
 }

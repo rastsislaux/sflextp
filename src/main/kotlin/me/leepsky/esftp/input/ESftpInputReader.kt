@@ -23,18 +23,31 @@ open class ESftpInputReader: SftpInputReader {
             .order(BYTE_ORDER)
 
         return when (val typeId = packet.get().toInt()) {
-            SftpPacketType.SSH_FXP_INIT -> readSftpPacket1(packet)
-            SftpPacketType.SSH_FXP_CLOSE -> readSftpPacket4(packet)
-            SftpPacketType.SSH_FXP_OPENDIR -> readSftpPacket11(packet)
-            SftpPacketType.SSH_FXP_READDIR -> readSftpPacket12(packet)
-            SftpPacketType.SSH_FXP_REALPATH -> readSftpPacket16(packet)
+            SftpPacketType.SSH_FXP_INIT     -> read1(packet)
+            SftpPacketType.SSH_FXP_OPEN     -> read3(packet)
+            SftpPacketType.SSH_FXP_CLOSE    -> read4(packet)
+            SftpPacketType.SSH_FXP_READ     -> read5(packet)
+            SftpPacketType.SSH_FXP_OPENDIR  -> read11(packet)
+            SftpPacketType.SSH_FXP_READDIR  -> read12(packet)
+            SftpPacketType.SSH_FXP_REALPATH -> read16(packet)
+            SftpPacketType.SSH_FXP_STAT     -> read17(packet)
             else -> TODO("Reading packet $typeId not supported yet.")
         }
     }
 
-    protected open fun readSftpPacket1(packet: ByteBuffer) = SftpPacket1(packet.int)
+    protected open fun read1(packet: ByteBuffer) = SftpPacket1(packet.int)
 
-    protected open fun readSftpPacket4(packet: ByteBuffer): SftpPacket4 {
+    protected open fun read3(packet: ByteBuffer): SftpPacket3 {
+        val id = packet.int
+        val filenameLength = packet.int
+        val filename = readUTF8String(packet, filenameLength)
+        val pFlags = SftpPacket3.Companion.PFlags(packet.int)
+        val attrs = readAttrs(packet)
+
+        return SftpPacket3(id, filename, pFlags, attrs)
+    }
+
+    protected open fun read4(packet: ByteBuffer): SftpPacket4 {
         val requestId = packet.int
         val handleLength = packet.int
         val handle = readUTF8String(packet, handleLength)
@@ -42,7 +55,17 @@ open class ESftpInputReader: SftpInputReader {
         return SftpPacket4(requestId, handle)
     }
 
-    protected open fun readSftpPacket11(packet: ByteBuffer): SftpPacket11 {
+    protected open fun read5(packet: ByteBuffer): SftpPacket5 {
+        val id = packet.int
+        val handleLength = packet.int
+        val handle = readUTF8String(packet, handleLength)
+        val offset = packet.long
+        val len = packet.int
+
+        return SftpPacket5(id, handle, offset, len)
+    }
+
+    protected open fun read11(packet: ByteBuffer): SftpPacket11 {
         val requestId = packet.int
         val pathLength = packet.int
         val path = readUTF8String(packet, pathLength)
@@ -50,7 +73,7 @@ open class ESftpInputReader: SftpInputReader {
         return SftpPacket11(requestId, path)
     }
 
-    protected open fun readSftpPacket12(packet: ByteBuffer): SftpPacket12 {
+    protected open fun read12(packet: ByteBuffer): SftpPacket12 {
         val requestId = packet.int
         val handleLength = packet.int
         val handle = readUTF8String(packet, handleLength)
@@ -58,16 +81,18 @@ open class ESftpInputReader: SftpInputReader {
         return SftpPacket12(requestId, handle)
     }
 
-    protected open fun readSftpPacket16(packet: ByteBuffer): SftpPacket16 {
+    protected open fun read16(packet: ByteBuffer): SftpPacket16 {
         val requestId = packet.int
         val originalPathLength = packet.int
         val originalPath = readUTF8String(packet, originalPathLength)
-        val controlByte: SftpPacket16.Companion.ControlByte?
-        if (packet.hasRemaining()) {
-            TODO("Control byte is not yet implemented for SSH_FXP_REALPATH")
-            // controlByte = SftpPacket16.Companion.ControlByte.values().find { packet.get() == it.value }
-        }
-        return SftpPacket16(requestId, originalPath, null, null)
+        return SftpPacket16(requestId, originalPath)
+    }
+
+    protected open fun read17(packet: ByteBuffer): SftpPacket17 {
+        val id = packet.int
+        val pathLength = packet.int
+        val path = readUTF8String(packet, pathLength)
+        return SftpPacket17(id, path)
     }
 
     companion object {
@@ -80,6 +105,14 @@ open class ESftpInputReader: SftpInputReader {
                 bytes[i] = buffer.get()
             }
             return String(bytes)
+        }
+
+        private fun readAttrs(buffer: ByteBuffer): FileAttributes {
+            val validAttributeFlags = buffer.int
+            if (buffer.hasRemaining()) {
+                TODO("Not implemented: reading optional attrs")
+            }
+            return FileAttributes(validAttributeFlags)
         }
     }
 

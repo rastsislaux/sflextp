@@ -1,27 +1,25 @@
 package me.leepsky.esftp
 
-import me.leepsky.esftp.input.ESftpInputReader
 import me.leepsky.esftp.input.SftpInputReader
-import me.leepsky.esftp.output.ESftpOutputWriter
 import me.leepsky.esftp.output.SftpOutputWriter
-import me.leepsky.esftp.processing.ESftpPacketProcessor
+import me.leepsky.esftp.processing.SftpPacketProcessor
 import org.apache.sshd.server.Environment
 import org.apache.sshd.server.ExitCallback
 import org.apache.sshd.server.channel.ChannelSession
 import org.apache.sshd.server.command.Command
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.BufferUnderflowException
 
 class ESftpSubsystem(
-    private val channel: ChannelSession?
+    private val channel: ChannelSession?,
+    private val inp: SftpInputReader,
+    private val out: SftpOutputWriter,
+    private val processor: SftpPacketProcessor
 ): Command, Runnable {
 
-    private lateinit var out: SftpOutputWriter
     private lateinit var err: OutputStream
-    private lateinit var inp: SftpInputReader
-    private val processor: ESftpPacketProcessor = ESftpPacketProcessor()
-    private var exitCallback: ExitCallback? = null
-
+    private lateinit var exitCallback: ExitCallback
     private var destroyed = false
 
     override fun start(channel: ChannelSession?, env: Environment?) {
@@ -30,16 +28,14 @@ class ESftpSubsystem(
 
     override fun destroy(channel: ChannelSession?) {
         destroyed = true
-        exitCallback?.onExit(0)
+        exitCallback.onExit(0)
     }
 
     override fun setInputStream(`in`: InputStream) {
-        this.inp = ESftpInputReader()
         this.inp.setInputStream(`in`)
     }
 
-    override fun setOutputStream(out: OutputStream?) {
-        this.out = ESftpOutputWriter()
+    override fun setOutputStream(out: OutputStream) {
         this.out.setOutputStream(out)
     }
 
@@ -47,26 +43,17 @@ class ESftpSubsystem(
         this.err = err
     }
 
-    override fun setExitCallback(callback: ExitCallback?) {
+    override fun setExitCallback(callback: ExitCallback) {
         this.exitCallback = callback
     }
 
     override fun run() {
-        while (!destroyed) {
-            mainLoop()
-        }
-    }
-
-    private fun writeError(str: String) {
-        err.write(str.toByteArray())
-        err.flush()
+        while (!destroyed) { mainLoop() }
     }
 
     private fun mainLoop() {
-        val request = inp.read()
-        println("Received packet: $request")
+        val request = try { inp.read() } catch (e: BufferUnderflowException) { return destroy(this.channel) }
         val response = processor.process(request)
-        println("Sent packet: $response")
         out.write(response)
     }
 
