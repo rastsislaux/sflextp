@@ -1,4 +1,4 @@
-import me.leepsky.esftp.MySftpSubsystemFactory
+import me.leepsky.esftp.ESftpSubsystemFactory
 import org.apache.sshd.server.SshServer
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider
 import java.io.File
@@ -7,7 +7,7 @@ fun main() {
     val sshd = SshServer.setUpDefaultServer()
     sshd.port = 2000
     sshd.keyPairProvider = SimpleGeneratorHostKeyProvider(File("hosts.ser").toPath())
-    sshd.subsystemFactories = listOf(MySftpSubsystemFactory())
+    sshd.subsystemFactories = listOf(ESftpSubsystemFactory())
     sshd.setPasswordAuthenticator { _, _, _ -> true}
     sshd.start()
 

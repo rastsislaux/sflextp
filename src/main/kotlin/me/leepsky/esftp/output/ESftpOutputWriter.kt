@@ -5,7 +5,7 @@ import java.io.BufferedOutputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 
-open class DefaultSftpOutputWriter: SftpOutputWriter {
+open class ESftpOutputWriter: SftpOutputWriter {
 
     private lateinit var out: BufferedOutputStream
 
@@ -93,10 +93,10 @@ open class DefaultSftpOutputWriter: SftpOutputWriter {
                 .put(attrsBytes)
         }
 
-        packet.endOfList?.let {
+        /*packet.endOfList?.let {
             length += 1
             bytes.put(if (it) 1 else 0)
-        }
+        }*/
 
         bytes.putInt(0, length)
 

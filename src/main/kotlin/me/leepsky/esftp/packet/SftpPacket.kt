@@ -1,6 +1,5 @@
 package me.leepsky.esftp.packet
 
-import me.leepsky.esftp.FileAttributes
 import java.util.Locale
 
 object SftpPacketType {

@@ -1,4 +1,4 @@
-package me.leepsky.esftp
+package me.leepsky.esftp.packet
 
 import java.nio.ByteBuffer
 
@@ -32,9 +32,8 @@ data class FileAttributes(
     val type: Type
 ) {
 
-    fun toByteArray(): ByteArray = ByteBuffer.allocate(5)
+    fun toByteArray(): ByteArray = ByteBuffer.allocate(4)
         .putInt(validAttributeFlags)
-        .put(type.value.toByte())
         .array()
 
     companion object {

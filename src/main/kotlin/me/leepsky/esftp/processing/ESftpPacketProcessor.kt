@@ -1,6 +1,7 @@
-package me.leepsky.esftp
+package me.leepsky.esftp.processing
 
-import me.leepsky.esftp.FileAttributes.Companion.Type
+import me.leepsky.esftp.packet.FileAttributes
+import me.leepsky.esftp.packet.FileAttributes.Companion.Type
 import me.leepsky.esftp.packet.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -8,11 +9,11 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 import kotlin.io.path.Path
 
-open class SftpPacketProcessor {
+open class ESftpPacketProcessor: SftpPacketProcessor {
 
     private val dirHandles = mutableMapOf<String, Path?>()
 
-    fun process(packet: SftpPacket): SftpPacket {
+    override fun process(packet: SftpPacket): SftpPacket {
         return when (packet) {
             is SftpPacket1 -> process(packet)
             is SftpPacket4 -> process(packet)

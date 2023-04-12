@@ -5,7 +5,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-open class DefaultSftpInputReader: SftpInputReader {
+open class ESftpInputReader: SftpInputReader {
 
     private lateinit var inputStream: InputStream
 
