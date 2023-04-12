@@ -10,6 +10,7 @@ import org.apache.sshd.server.channel.ChannelSession
 import org.apache.sshd.server.command.Command
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.Buffer
 
 class MySftpSubsystem(
     private val channel: ChannelSession?
@@ -61,5 +62,5 @@ class MySftpSubsystem(
         err.flush()
     }
 
-    private fun mainLoop() = out.writePacket(processor.processPacket(inp.readPacket()))
+    private fun mainLoop() = out.write(processor.process(inp.read()))
 }

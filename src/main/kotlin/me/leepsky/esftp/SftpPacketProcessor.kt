@@ -10,32 +10,38 @@ import kotlin.io.path.Path
 
 open class SftpPacketProcessor {
 
-    fun processPacket(packet: SftpPacket): SftpPacket {
+    fun process(packet: SftpPacket): SftpPacket {
         return when (packet) {
-            is SftpPacket1 -> processPacket(packet)
-            is SftpPacket11 -> processPacket(packet)
-            is SftpPacket12 -> processPacket(packet)
-            is SftpPacket16 -> processPacket(packet)
+            is SftpPacket1 -> process(packet)
+            is SftpPacket4 -> process(packet)
+            is SftpPacket11 -> process(packet)
+            is SftpPacket12 -> process(packet)
+            is SftpPacket16 -> process(packet)
             else -> TODO("Processing of packet ${packet.typeId} is not yet implemented.")
         }
     }
 
-    protected open fun processPacket(packet: SftpPacket1): SftpPacket2 {
+    protected open fun process(packet: SftpPacket1): SftpPacket2 {
         return SftpPacket2(3)
     }
 
-    protected open fun processPacket(packet: SftpPacket11): SftpPacket {
+    protected open fun process(packet: SftpPacket4): SftpPacket101 {
+        return SftpPacket101(packet.requestId, SftpPacket101.Companion.StatusCode.SSH_FX_OK,
+                 "All good.", Locale.ENGLISH)
+    }
+
+    protected open fun process(packet: SftpPacket11): SftpPacket {
         val path = Path(packet.path)
 
         if (!Files.isDirectory(path)) {
             return SftpPacket101(packet.requestId, SftpPacket101.Companion.StatusCode.SSH_FX_NOT_A_DIRECTORY,
-                "Not a directory.", Locale.ENGLISH)
+                     "Not a directory.", Locale.ENGLISH)
         }
 
         return SftpPacket102(packet.requestId, path.toString())
     }
 
-    protected open fun processPacket(packet: SftpPacket12): SftpPacket {
+    protected open fun process(packet: SftpPacket12): SftpPacket {
         val path = Path(packet.handle)
 
         if (!Files.isDirectory(path)) {
@@ -43,16 +49,13 @@ open class SftpPacketProcessor {
                 "Not a directory.", Locale.ENGLISH)
         }
 
-        val files = Files.list(path).toList()
-            .map { it.toString() to getFileAttributes(it) }
-            .toMap()
+        val files = Files.list(path).toList().associate { it.toString() to getFileAttributes(it) }
 
-        return SftpPacket104(packet.requestId, files, true)
+        return SftpPacket104(packet.requestId, files, false)
     }
 
-    protected open fun processPacket(packet: SftpPacket16): SftpPacket104 {
+    protected open fun process(packet: SftpPacket16): SftpPacket104 {
         val path = Path(packet.originalPath).toRealPath()
-        val type = getFileType(path)
 
         return SftpPacket104(
             packet.requestId,

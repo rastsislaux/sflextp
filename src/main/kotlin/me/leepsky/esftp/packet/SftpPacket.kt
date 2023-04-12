@@ -38,6 +38,14 @@ data class SftpPacket2(
 ): SftpPacket(SftpPacketType.SSH_FXP_VERSION)
 
 /**
+ * Represents SSH_FXP_CLOSE
+ */
+data class SftpPacket4(
+    val requestId: Int,
+    val handle: String
+): SftpPacket(SftpPacketType.SSH_FXP_CLOSE)
+
+/**
  * Represents SSH_FXP_OPENDIR
  */
 data class SftpPacket11(

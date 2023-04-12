@@ -32,9 +32,9 @@ data class FileAttributes(
     val type: Type
 ) {
 
-    fun toByteArray(): ByteArray = ByteBuffer.allocate(8)
+    fun toByteArray(): ByteArray = ByteBuffer.allocate(5)
         .putInt(validAttributeFlags)
-        .putInt(type.value)
+        .put(type.value.toByte())
         .array()
 
     companion object {

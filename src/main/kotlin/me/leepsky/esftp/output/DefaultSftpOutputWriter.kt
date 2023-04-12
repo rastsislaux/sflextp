@@ -9,7 +9,7 @@ open class DefaultSftpOutputWriter: SftpOutputWriter {
 
     private lateinit var out: BufferedOutputStream
 
-    override fun writePacket(packet: SftpPacket) {
+    override fun write(packet: SftpPacket) {
         when (packet) {
             is SftpPacket2 -> writePacket(packet)
             is SftpPacket101 -> writePacket(packet)
@@ -79,7 +79,7 @@ open class DefaultSftpOutputWriter: SftpOutputWriter {
             .putInt(packet.content.size)
 
         var length = 9 // Length of Type ID + Request ID + Content Size
-        packet.content.forEach {
+        for (it in packet.content) {
             val pathBytes = it.key.toByteArray()
             val attrsBytes = it.value.toByteArray()
             length += pathBytes.size + attrsBytes.size + 4 // 4 is the size of string length
@@ -87,6 +87,7 @@ open class DefaultSftpOutputWriter: SftpOutputWriter {
                 .putInt(pathBytes.size)
                 .put(pathBytes)
                 .put(attrsBytes)
+            break
         }
 
         packet.endOfList?.let {

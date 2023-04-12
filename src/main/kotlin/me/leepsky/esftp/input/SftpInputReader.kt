@@ -5,6 +5,6 @@ import org.apache.sshd.server.command.CommandDirectInputStreamAware
 
 interface SftpInputReader : CommandDirectInputStreamAware {
 
-    fun readPacket(): SftpPacket
+    fun read(): SftpPacket
 
 }

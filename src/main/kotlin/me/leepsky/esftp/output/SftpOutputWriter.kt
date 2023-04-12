@@ -5,6 +5,6 @@ import org.apache.sshd.server.command.CommandDirectOutputStreamAware
 
 interface SftpOutputWriter: CommandDirectOutputStreamAware {
 
-    fun writePacket(packet: SftpPacket)
+    fun write(packet: SftpPacket)
 
 }

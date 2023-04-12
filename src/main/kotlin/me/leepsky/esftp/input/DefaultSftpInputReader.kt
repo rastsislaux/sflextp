@@ -13,7 +13,7 @@ open class DefaultSftpInputReader: SftpInputReader {
         this.inputStream = inputStream
     }
 
-    override fun readPacket(): SftpPacket {
+    override fun read(): SftpPacket {
         val lengthBytes = inputStream.readNBytes(LENGTH_BYTE_COUNT)
         val length = ByteBuffer.wrap(lengthBytes)
             .order(BYTE_ORDER)
@@ -24,14 +24,23 @@ open class DefaultSftpInputReader: SftpInputReader {
 
         return when (val typeId = packet.get().toInt()) {
             SftpPacketType.SSH_FXP_INIT -> readSftpPacket1(packet)
+            SftpPacketType.SSH_FXP_CLOSE -> readSftpPacket4(packet)
             SftpPacketType.SSH_FXP_OPENDIR -> readSftpPacket11(packet)
             SftpPacketType.SSH_FXP_READDIR -> readSftpPacket12(packet)
             SftpPacketType.SSH_FXP_REALPATH -> readSftpPacket16(packet)
-            else -> TODO("Packet $typeId not supported yet.")
+            else -> TODO("Reading packet $typeId not supported yet.")
         }
     }
 
     protected open fun readSftpPacket1(packet: ByteBuffer) = SftpPacket1(packet.int)
+
+    protected open fun readSftpPacket4(packet: ByteBuffer): SftpPacket4 {
+        val requestId = packet.int
+        val handleLength = packet.int
+        val handle = readUTF8String(packet, handleLength)
+
+        return SftpPacket4(requestId, handle)
+    }
 
     protected open fun readSftpPacket11(packet: ByteBuffer): SftpPacket11 {
         val requestId = packet.int
