@@ -65,7 +65,7 @@ while (true) { }
 ```
 
 ## License
-Sflextp is released under the Apache License, Version 2.0. See the LICENSE file for more information.
+Sflextp is released under the MIT License. See the LICENSE file for more information.
 
 ## Contributing
 We welcome contributions to sflextp! If you would like to contribute code, documentation, or anything else, please submit a pull request on GitHub.
