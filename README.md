@@ -1,9 +1,9 @@
-# Sflextp Subsystem for Apache Mina
+# SFlexTP Subsystem for Apache Mina
 ## Overview
-*Sflextp* is a simple and extensible SFTP subsystem for Apache Mina. It provides a way to handle SFTP requests and responses in a flexible way, by allowing users to customize the input reader, output writer, and packet processor used by the subsystem.
+*SFlexTP* is a simple and extensible SFTP subsystem for Apache Mina. It provides a way to handle SFTP requests and responses in a flexible way, by allowing users to customize the input reader, output writer, and packet processor used by the subsystem.
 
 ## Getting Started
-To use sflextp, you need to add the following dependency to your project:
+To use SFlexTP, you need to add the following dependency to your project:
 
 Maven:
 ```xml
@@ -52,10 +52,10 @@ public class Main {
     }
 }
 ```
-This code creates an SFTP server on port 2000 and adds the sflextp subsystem to it. It uses the default input reader, output writer, and packet processor, but you can customize these by passing your own instances to the SflextpSubsystemFactory constructor.
+This code creates an SFTP server on port 2000 and adds the SFlexTP subsystem to it. It uses the default input reader, output writer, and packet processor, but you can customize these by passing your own instances to the SflextpSubsystemFactory constructor.
 
 ## Customization
-To customize the sflextp subsystem, you can implement your own input reader, output writer, or packet processor, and pass them to the SflextpSubsystemFactory constructor. For example, here's how you could create a custom packet processor:
+To customize the SFlexTP subsystem, you can implement your own input reader, output writer, or packet processor, and pass them to the SflextpSubsystemFactory constructor. For example, here's how you could create a custom packet processor:
 
 ```kotlin
 class MyPacketProcessor: SflextpPacketProcessor() {
@@ -86,4 +86,4 @@ while (true) { }
 Sflextp is released under the MIT License. See the LICENSE file for more information.
 
 ## Contributing
-We welcome contributions to sflextp! If you would like to contribute code, documentation, or anything else, please submit a pull request on GitHub.
+We welcome contributions to SFlexTP! If you would like to contribute code, documentation, or anything else, please submit a pull request on GitHub.
