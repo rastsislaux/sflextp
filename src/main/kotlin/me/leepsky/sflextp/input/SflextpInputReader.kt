@@ -1,11 +1,11 @@
-package me.leepsky.esftp.input
+package me.leepsky.sflextp.input
 
-import me.leepsky.esftp.packet.*
+import me.leepsky.sflextp.packet.*
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-open class ESftpInputReader: SftpInputReader {
+open class SflextpInputReader: SftpInputReader {
 
     private lateinit var inputStream: InputStream
 

@@ -1,17 +1,15 @@
-package me.leepsky.esftp.processing
+package me.leepsky.sflextp.processing
 
-import me.leepsky.esftp.packet.*
-import java.io.File
+import me.leepsky.sflextp.packet.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.io.path.Path
-import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readBytes
 
-open class ESftpPacketProcessor: SftpPacketProcessor {
+open class SflextpPacketProcessor: SftpPacketProcessor {
 
     private val dirHandles = mutableMapOf<String, Path?>()
 
@@ -77,7 +75,17 @@ open class ESftpPacketProcessor: SftpPacketProcessor {
                  "All good.", Locale.ENGLISH)
     }
 
-    // TODO: Fix multirequest reading
+    /**
+     * Process SSH_FXP_READ.
+     *
+     * In response to this request, the server will read as many bytes as it
+     *    can from the file (up to `len'), and return them in a SSH_FXP_DATA
+     *    message.  If an error occurs or EOF is encountered before reading any
+     *    data, the server will respond with SSH_FXP_STATUS.  For normal disk
+     *    files, it is guaranteed that this will read the specified number of
+     *    bytes, or up to end of file.  For e.g.  device files this may return
+     *    fewer bytes than requested.
+     */
     protected open fun process(packet: SftpPacket5): SftpPacket {
         val handle = packet.handle
 

@@ -1,6 +1,6 @@
-package me.leepsky.esftp.processing
+package me.leepsky.sflextp.processing
 
-import me.leepsky.esftp.packet.SftpPacket
+import me.leepsky.sflextp.packet.SftpPacket
 
 interface SftpPacketProcessor {
 

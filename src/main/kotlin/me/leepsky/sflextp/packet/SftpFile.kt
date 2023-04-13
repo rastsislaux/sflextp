@@ -1,4 +1,4 @@
-package me.leepsky.esftp.packet
+package me.leepsky.sflextp.packet
 
 data class SftpFile(
     val filename: String,

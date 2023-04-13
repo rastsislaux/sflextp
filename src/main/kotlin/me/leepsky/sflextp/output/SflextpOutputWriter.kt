@@ -1,11 +1,11 @@
-package me.leepsky.esftp.output
+package me.leepsky.sflextp.output
 
-import me.leepsky.esftp.packet.*
+import me.leepsky.sflextp.packet.*
 import java.io.BufferedOutputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 
-open class ESftpOutputWriter: SftpOutputWriter {
+open class SflextpOutputWriter: SftpOutputWriter {
 
     private lateinit var out: BufferedOutputStream
 

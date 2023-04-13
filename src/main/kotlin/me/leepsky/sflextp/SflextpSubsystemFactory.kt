@@ -1,12 +1,12 @@
-package me.leepsky.esftp
+package me.leepsky.sflextp
 
-import me.leepsky.esftp.input.SftpInputReader
-import me.leepsky.esftp.output.SftpOutputWriter
-import me.leepsky.esftp.processing.SftpPacketProcessor
+import me.leepsky.sflextp.input.SftpInputReader
+import me.leepsky.sflextp.output.SftpOutputWriter
+import me.leepsky.sflextp.processing.SftpPacketProcessor
 import org.apache.sshd.server.channel.ChannelSession
 import org.apache.sshd.server.subsystem.SubsystemFactory
 
-class ESftpSubsystemFactory(
+class SflextpSubsystemFactory(
     private val readerProvider: () -> SftpInputReader,
     private val outputProvider: () -> SftpOutputWriter,
     private val processorProvider: () -> SftpPacketProcessor

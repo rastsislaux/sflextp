@@ -1,8 +1,8 @@
-package me.leepsky.esftp
+package me.leepsky.sflextp
 
-import me.leepsky.esftp.input.SftpInputReader
-import me.leepsky.esftp.output.SftpOutputWriter
-import me.leepsky.esftp.processing.SftpPacketProcessor
+import me.leepsky.sflextp.input.SftpInputReader
+import me.leepsky.sflextp.output.SftpOutputWriter
+import me.leepsky.sflextp.processing.SftpPacketProcessor
 import org.apache.sshd.server.Environment
 import org.apache.sshd.server.ExitCallback
 import org.apache.sshd.server.channel.ChannelSession
