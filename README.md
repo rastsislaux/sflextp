@@ -34,6 +34,24 @@ fun main() {
     while (true) { }
 }
 ```
+Or, if you prefer Java:
+```java
+public class Main {
+    public static void main(String[] args) throws IOException {
+        SshServer sshd = SshServer.setUpDefaultServer();
+        sshd.setPort(2000);
+        sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hosts.ser").toPath()));
+        sshd.setSubsystemFactories(
+                List.of(new SflextpSubsystemFactory(SflextpInputReader::new,
+                                                    SflextpOutputWriter::new,
+                                                    SflextpPacketProcessor::new)));
+        sshd.setPasswordAuthenticator((username, password, session) -> true);
+        sshd.start();
+
+        while (true) { }
+    }
+}
+```
 This code creates an SFTP server on port 2000 and adds the sflextp subsystem to it. It uses the default input reader, output writer, and packet processor, but you can customize these by passing your own instances to the SflextpSubsystemFactory constructor.
 
 ## Customization
