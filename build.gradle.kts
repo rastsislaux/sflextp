@@ -1,10 +1,10 @@
 plugins {
     kotlin("jvm") version "1.8.0"
-    application
+    `java-library`
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "me.leepsky"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -26,8 +26,4 @@ tasks.test {
 
 kotlin {
     jvmToolchain(17)
-}
-
-application {
-    mainClass.set("MainKt")
 }

@@ -12,6 +12,7 @@ object SftpPacketType {
     const val SSH_FXP_LSTAT    = 7
     const val SSH_FXP_FSTAT    = 8
     const val SSH_FXP_SETSTAT  = 9
+    const val SSH_FXP_FSETSTAT = 10
     const val SSH_FXP_OPENDIR  = 11
     const val SSH_FXP_READDIR  = 12
     const val SSH_FXP_REMOVE   = 13
