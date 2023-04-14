@@ -11,7 +11,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.BufferUnderflowException
 
-class ESftpSubsystem(
+class SflextpSubsystem(
     private val channel: ChannelSession?,
     private val inp: SftpInputReader,
     private val out: SftpOutputWriter,
@@ -54,6 +54,9 @@ class ESftpSubsystem(
     private fun mainLoop() {
         val request = try { inp.read() } catch (e: BufferUnderflowException) { return destroy(this.channel) }
         val response = processor.process(request)
+
+        println("$request -> $response")
+
         out.write(response)
     }
 

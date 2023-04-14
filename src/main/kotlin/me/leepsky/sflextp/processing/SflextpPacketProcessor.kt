@@ -1,19 +1,19 @@
 package me.leepsky.sflextp.processing
 
 import me.leepsky.sflextp.packet.*
+import java.io.File
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.time.format.DateTimeFormatter
 import java.util.*
-import kotlin.io.path.Path
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.readBytes
+import kotlin.io.path.*
 
 open class SflextpPacketProcessor: SftpPacketProcessor {
 
     private val dirHandles = mutableMapOf<String, Path?>()
 
-    private val fileHandles = mutableMapOf<String, ByteArray>()
+    private val fileHandles = mutableMapOf<String, FileHandle>()
 
     override fun process(packet: SftpPacket): SftpPacket {
         return when (packet) {
@@ -21,8 +21,11 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
             is SftpPacket3  -> process(packet)
             is SftpPacket4  -> process(packet)
             is SftpPacket5  -> process(packet)
+            is SftpPacket6  -> process(packet)
             is SftpPacket11 -> process(packet)
             is SftpPacket12 -> process(packet)
+            is SftpPacket13 -> process(packet)
+            is SftpPacket14 -> process(packet)
             is SftpPacket16 -> process(packet)
             is SftpPacket17 -> process(packet)
             else -> TODO("Processing of packet ${packet.typeId} is not yet implemented.")
@@ -49,15 +52,30 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
     protected open fun process(packet: SftpPacket3): SftpPacket {
         val path = Path(packet.filename)
 
-        if (!path.isRegularFile()) {
-            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
-                "Not a file.", Locale.ENGLISH)
+        fun read(): SftpPacket {
+            if (!path.isRegularFile()) {
+                return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
+                    "Not a file.", Locale.ENGLISH)
+            }
+
+            val handle = UUID.randomUUID().toString()
+            fileHandles[handle] = FileHandle(path, packet.pflags, bytes=path.readBytes())
+
+            return SftpPacket102(packet.id, handle)
         }
 
-        val handle = UUID.randomUUID().toString()
-        fileHandles[handle] = path.readBytes()
+        fun write(): SftpPacket {
+            val handle = UUID.randomUUID().toString()
+            fileHandles[handle] = FileHandle(path, packet.pflags)
+            return SftpPacket102(packet.id, handle)
+        }
 
-        return SftpPacket102(packet.id, handle)
+        return when {
+            packet.pflags.isRead -> read()
+            packet.pflags.isWrite -> write()
+            else -> TODO("File open mode is not yet implemented.")
+        }
+
     }
 
     /**
@@ -89,12 +107,12 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
     protected open fun process(packet: SftpPacket5): SftpPacket {
         val handle = packet.handle
 
-        if (handle !in fileHandles) {
+        if (handle !in fileHandles || !fileHandles[handle]!!.pflags.isRead) {
             return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
                 "Invalid handle.", Locale.ENGLISH)
         }
 
-        val byteArray = fileHandles[handle]!!
+        val byteArray = fileHandles[handle]!!.bytes!!
 
         if (packet.offset > byteArray.size) {
             return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_EOF,
@@ -107,6 +125,30 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
         }
 
         return SftpPacket103(packet.id, data)
+    }
+
+    /**
+     * Process SSH_FXP_WRITE.
+     *
+     * The write will extend the file if writing beyond the end of the file.
+     *    It is legal to write way beyond the end of the file; the semantics
+     *    are to write zeroes from the end of the file to the specified offset
+     *    and then the data.  On most operating systems, such writes do not
+     *    allocate disk space but instead leave "holes" in the file.
+     *
+     * The server responds to a write request with a SSH_FXP_STATUS message.
+     */
+    protected open fun process(packet: SftpPacket6): SftpPacket {
+        if (packet.handle !in fileHandles || !fileHandles[packet.handle]!!.pflags.isWrite) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
+                "Invalid handle.", Locale.ENGLISH)
+        }
+
+        val handle = fileHandles[packet.handle]!!
+        handle.path.toFile().appendBytes(packet.data)
+
+        return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_OK,
+            "All OK.", Locale.ENGLISH)
     }
 
     protected open fun process(packet: SftpPacket11): SftpPacket {
@@ -160,8 +202,53 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
         return SftpPacket104(packet.id, files)
     }
 
-    protected open fun process(packet: SftpPacket16): SftpPacket104 {
-        val path = Path(packet.path).toRealPath()
+    protected open fun process(packet: SftpPacket13): SftpPacket101 {
+        val path = Path(packet.filename)
+
+        if (Files.isDirectory(path)) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
+                "Is a directory.", Locale.ENGLISH)
+        }
+
+        if (!Files.exists(path)) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_NO_SUCH_FILE,
+                "No such file.", Locale.ENGLISH)
+        }
+
+        path.deleteIfExists()
+
+        return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_OK,
+            "OK.", Locale.ENGLISH)
+    }
+
+    /**
+     * Process SSH_FXP_MKDIR
+     *
+     * An error will be returned if a file or
+     *    directory with the specified path already exists.  The server will
+     *    respond to this request with a SSH_FXP_STATUS message.
+     */
+    protected open fun process(packet: SftpPacket14): SftpPacket {
+        val path = Path(packet.path)
+
+        if (Files.exists(path)) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
+                "Already exists.", Locale.ENGLISH)
+        }
+
+        File(path.toString()).mkdirs()
+
+        return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_OK,
+            "Created.", Locale.ENGLISH)
+    }
+
+    protected open fun process(packet: SftpPacket16): SftpPacket {
+        val path = try { Path(packet.path).toRealPath() }
+
+        catch (e: NoSuchFileException) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_NO_SUCH_FILE,
+                "No such file.", Locale.ENGLISH)
+        }
 
         return SftpPacket104(
             packet.id,
@@ -176,6 +263,36 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
 
     private fun getFileAttributes(path: Path): FileAttributes {
         return FileAttributes(0)
+    }
+
+    companion object {
+
+        data class FileHandle(
+            val path: Path,
+            val pflags: SftpPacket3.Companion.PFlags,
+            val bytes: ByteArray? = null,
+        ) {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (javaClass != other?.javaClass) return false
+
+                other as FileHandle
+
+                if (path != other.path) return false
+                if (!bytes.contentEquals(other.bytes)) return false
+                if (pflags != other.pflags) return false
+
+                return true
+            }
+
+            override fun hashCode(): Int {
+                var result = path.hashCode()
+                result = 31 * result + bytes.contentHashCode()
+                result = 31 * result + pflags.hashCode()
+                return result
+            }
+        }
+
     }
 
 }

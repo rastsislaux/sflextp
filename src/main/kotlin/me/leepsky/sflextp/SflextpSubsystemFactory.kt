@@ -14,7 +14,7 @@ class SflextpSubsystemFactory(
 
     override fun getName() = "sftp"
 
-    override fun createSubsystem(channel: ChannelSession?) = ESftpSubsystem(channel,
+    override fun createSubsystem(channel: ChannelSession?) = SflextpSubsystem(channel,
                                                                             readerProvider(),
                                                                             outputProvider(),
                                                                             processorProvider())

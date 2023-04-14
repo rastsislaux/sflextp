@@ -4,6 +4,7 @@ import me.leepsky.sflextp.packet.*
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.file.attribute.FileAttribute
 
 open class SflextpInputReader: SftpInputReader {
 
@@ -27,8 +28,11 @@ open class SflextpInputReader: SftpInputReader {
             SftpPacketType.SSH_FXP_OPEN     -> read3(packet)
             SftpPacketType.SSH_FXP_CLOSE    -> read4(packet)
             SftpPacketType.SSH_FXP_READ     -> read5(packet)
+            SftpPacketType.SSH_FXP_WRITE    -> read6(packet)
             SftpPacketType.SSH_FXP_OPENDIR  -> read11(packet)
             SftpPacketType.SSH_FXP_READDIR  -> read12(packet)
+            SftpPacketType.SSH_FXP_REMOVE   -> read13(packet)
+            SftpPacketType.SSH_FXP_MKDIR    -> read14(packet)
             SftpPacketType.SSH_FXP_REALPATH -> read16(packet)
             SftpPacketType.SSH_FXP_STAT     -> read17(packet)
             else -> TODO("Reading packet $typeId not supported yet.")
@@ -65,6 +69,17 @@ open class SflextpInputReader: SftpInputReader {
         return SftpPacket5(id, handle, offset, len)
     }
 
+    protected open fun read6(packet: ByteBuffer): SftpPacket6 {
+        val id = packet.int
+        val handleLength = packet.int
+        val handle = readUTF8String(packet, handleLength)
+        val offset = packet.long
+        val dataLength = packet.int
+        val data = readBytes(packet, dataLength)
+
+        return SftpPacket6(id, handle, offset, data)
+    }
+
     protected open fun read11(packet: ByteBuffer): SftpPacket11 {
         val requestId = packet.int
         val pathLength = packet.int
@@ -79,6 +94,23 @@ open class SflextpInputReader: SftpInputReader {
         val handle = readUTF8String(packet, handleLength)
 
         return SftpPacket12(requestId, handle)
+    }
+
+    protected open fun read13(packet: ByteBuffer): SftpPacket13 {
+        val id = packet.int
+        val filenameLength = packet.int
+        val filename = readUTF8String(packet, filenameLength)
+
+        return SftpPacket13(id, filename)
+    }
+
+    protected open fun read14(packet: ByteBuffer): SftpPacket14 {
+        val id = packet.int
+        val pathLength = packet.int
+        val path = readUTF8String(packet, pathLength)
+        val attrs = readAttrs(packet)
+
+        return SftpPacket14(id, path, attrs)
     }
 
     protected open fun read16(packet: ByteBuffer): SftpPacket16 {
@@ -100,19 +132,27 @@ open class SflextpInputReader: SftpInputReader {
         private val BYTE_ORDER = ByteOrder.BIG_ENDIAN
 
         private fun readUTF8String(buffer: ByteBuffer, length: Int): String {
+            return String(readBytes(buffer, length))
+        }
+
+        private fun readBytes(buffer: ByteBuffer, length: Int): ByteArray {
             val bytes = ByteArray(length)
             for (i in 0 until length) {
                 bytes[i] = buffer.get()
             }
-            return String(bytes)
+            return bytes
         }
 
         private fun readAttrs(buffer: ByteBuffer): FileAttributes {
-            val validAttributeFlags = buffer.int
-            if (buffer.hasRemaining()) {
-                TODO("Not implemented: reading optional attrs")
-            }
-            return FileAttributes(validAttributeFlags)
+            val flags = buffer.int
+
+            val size = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_SIZE != 0)       { buffer.long } else null
+            val uid = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_UIDGID != 0)      { buffer.int }  else null
+            val gid = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_UIDGID != 0)      { buffer.int }  else null
+            val atime = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_ACMODTIME != 0) { buffer.int }  else null
+            val mtime = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_ACMODTIME != 0) { buffer.int }  else null
+
+            return FileAttributes(flags, size, uid, gid, atime, mtime)
         }
     }
 

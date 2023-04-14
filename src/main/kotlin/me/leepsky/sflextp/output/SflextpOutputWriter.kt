@@ -89,19 +89,23 @@ open class SflextpOutputWriter: SftpOutputWriter {
     }
 
     protected open fun writePacket(packet: SftpPacket104) {
-        val bytes = ByteBuffer.allocate(1024) // Chosen at random
-            .putInt(0) // Length is unknown at this point
+        var length = 9
+
+        packet.content.forEach {
+            length += it.filename.toByteArray().size + it.longname.toByteArray().size + it.attrs.toByteArray().size + 8
+        }
+
+        val bytes = ByteBuffer.allocate(length + 4) // Chosen at random
+            .putInt(length)
             .put(packet.typeId.toByte())
             .putInt(packet.id)
             .putInt(packet.content.size)
 
-        var length = 9 // Length of Type ID + Request ID + Content Size
         for (it in packet.content) {
             val filenameBytes = it.filename.toByteArray()
             val longnameBytes = it.longname.toByteArray()
             val attrsBytes = it.attrs.toByteArray()
 
-            length += filenameBytes.size + longnameBytes.size + attrsBytes.size + 8 // 8 is the size of string lengths
             bytes
                 .putInt(filenameBytes.size)
                 .put(filenameBytes)
@@ -110,14 +114,8 @@ open class SflextpOutputWriter: SftpOutputWriter {
                 .put(attrsBytes)
         }
 
-        /*packet.endOfList?.let {
-            length += 1
-            bytes.put(if (it) 1 else 0)
-        }*/
 
-        bytes.putInt(0, length)
-
-        out.write(bytes.array().copyOfRange(0, length + 4))
+        out.write(bytes.array())
         out.flush()
     }
 
