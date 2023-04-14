@@ -26,8 +26,10 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
             is SftpPacket12 -> process(packet)
             is SftpPacket13 -> process(packet)
             is SftpPacket14 -> process(packet)
+            is SftpPacket15 -> process(packet)
             is SftpPacket16 -> process(packet)
             is SftpPacket17 -> process(packet)
+            is SftpPacket18 -> process(packet)
             else -> TODO("Processing of packet ${packet.typeId} is not yet implemented.")
         }
     }
@@ -242,6 +244,34 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
             "Created.", Locale.ENGLISH)
     }
 
+    /**
+     * Process SSH_FXP_RMDIR.
+     *
+     * An error will be returned if no directory
+     *    with the specified path exists, or if the specified directory is not
+     *    empty, or if the path specified a file system object other than a
+     *    directory.  The server responds to this request with a SSH_FXP_STATUS
+     *    message.
+     */
+    protected open fun process(packet: SftpPacket15): SftpPacket {
+        val path = Path(packet.path)
+
+        if (!path.isDirectory()) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
+                "Not a directory.", Locale.ENGLISH)
+        }
+
+        if (path.listDirectoryEntries().isNotEmpty()) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
+                "Directory not empty.", Locale.ENGLISH)
+        }
+
+        path.deleteIfExists()
+
+        return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_OK,
+            "OK.", Locale.ENGLISH)
+    }
+
     protected open fun process(packet: SftpPacket16): SftpPacket {
         val path = try { Path(packet.path).toRealPath() }
 
@@ -259,6 +289,34 @@ open class SflextpPacketProcessor: SftpPacketProcessor {
     protected open fun process(packet: SftpPacket17): SftpPacket {
         val path = Path(packet.path)
         return SftpPacket105(packet.id, getFileAttributes(path))
+    }
+
+    /**
+     * Process SSH_FXP_RENAME.
+     *
+     * It is an error if there already exists a file
+     *    with the name specified by newpath.  The server may also fail rename
+     *    requests in other situations, for example if 'oldpath' and 'newpath'
+     *    point to different file systems on the server.
+     *
+     * The server will respond to this request with a SSH_FXP_STATUS
+     *    message.
+     */
+    protected open fun process(packet: SftpPacket18): SftpPacket {
+        if (!Path(packet.oldPath).exists()) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_NO_SUCH_FILE,
+                "File does not exist.", Locale.ENGLISH)
+        }
+
+        if (Path(packet.newPath).exists()) {
+            return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_FAILURE,
+                "File exists.", Locale.ENGLISH)
+        }
+
+        Path(packet.oldPath).moveTo(Path(packet.newPath), overwrite = false)
+
+        return SftpPacket101(packet.id, SftpPacket101.Companion.StatusCode.SSH_FX_OK,
+            "OK.", Locale.ENGLISH)
     }
 
     private fun getFileAttributes(path: Path): FileAttributes {

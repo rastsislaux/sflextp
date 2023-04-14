@@ -33,8 +33,10 @@ open class SflextpInputReader: SftpInputReader {
             SftpPacketType.SSH_FXP_READDIR  -> read12(packet)
             SftpPacketType.SSH_FXP_REMOVE   -> read13(packet)
             SftpPacketType.SSH_FXP_MKDIR    -> read14(packet)
+            SftpPacketType.SSH_FXP_RMDIR    -> read15(packet)
             SftpPacketType.SSH_FXP_REALPATH -> read16(packet)
             SftpPacketType.SSH_FXP_STAT     -> read17(packet)
+            SftpPacketType.SSH_FXP_RENAME   -> read18(packet)
             else -> TODO("Reading packet $typeId not supported yet.")
         }
     }
@@ -113,6 +115,14 @@ open class SflextpInputReader: SftpInputReader {
         return SftpPacket14(id, path, attrs)
     }
 
+    protected open fun read15(packet: ByteBuffer): SftpPacket15 {
+        val id = packet.int
+        val pathLength = packet.int
+        val path = readUTF8String(packet, pathLength)
+
+        return SftpPacket15(id, path)
+    }
+
     protected open fun read16(packet: ByteBuffer): SftpPacket16 {
         val requestId = packet.int
         val originalPathLength = packet.int
@@ -125,6 +135,16 @@ open class SflextpInputReader: SftpInputReader {
         val pathLength = packet.int
         val path = readUTF8String(packet, pathLength)
         return SftpPacket17(id, path)
+    }
+
+    protected open fun read18(packet: ByteBuffer): SftpPacket18 {
+        val id = packet.int
+        val oldPathLength = packet.int
+        val oldPath = readUTF8String(packet, oldPathLength)
+        val newPathLength = packet.int
+        val newPath = readUTF8String(packet, newPathLength)
+
+        return SftpPacket18(id, oldPath, newPath)
     }
 
     companion object {
@@ -146,9 +166,9 @@ open class SflextpInputReader: SftpInputReader {
         private fun readAttrs(buffer: ByteBuffer): FileAttributes {
             val flags = buffer.int
 
-            val size = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_SIZE != 0)       { buffer.long } else null
-            val uid = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_UIDGID != 0)      { buffer.int }  else null
-            val gid = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_UIDGID != 0)      { buffer.int }  else null
+            val size  = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_SIZE != 0)      { buffer.long } else null
+            val uid   = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_UIDGID != 0)    { buffer.int }  else null
+            val gid   = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_UIDGID != 0)    { buffer.int }  else null
             val atime = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_ACMODTIME != 0) { buffer.int }  else null
             val mtime = if (flags and FileAttributeFlag.SSH_FILEXFER_ATTR_ACMODTIME != 0) { buffer.int }  else null
 

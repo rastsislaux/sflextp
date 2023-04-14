@@ -212,6 +212,23 @@ data class SftpPacket14(
 ): SftpPacket(SftpPacketType.SSH_FXP_MKDIR)
 
 /**
+ * Represents SSH_FXP_RMDIR.
+ *
+ * Directories can be removed using the SSH_FXP_RMDIR request
+ */
+data class SftpPacket15(
+    /**
+     * The request identifier.
+     */
+    val id: Int,
+
+    /**
+     * The directory to be removed.
+     */
+    val path: String
+): SftpPacket(SftpPacketType.SSH_FXP_RMDIR)
+
+/**
  * Represents SSH_FXP_REALPATH
  */
 data class SftpPacket16(
@@ -226,6 +243,28 @@ data class SftpPacket17(
     val id: Int,
     val path: String
 ): SftpPacket(SftpPacketType.SSH_FXP_STAT)
+
+/**
+ * Represents SSH_FXP_RENAME.
+ *
+ *  Files (and directories) can be renamed using the SSH_FXP_RENAME message.
+ */
+data class SftpPacket18(
+    /**
+     * The request identifier.
+     */
+    val id: Int,
+
+    /**
+     * The name of existing file or directory.
+     */
+    val oldPath: String,
+
+    /**
+     * The new name for the file or directory.
+     */
+    val newPath: String
+): SftpPacket(SftpPacketType.SSH_FXP_RENAME)
 
 /**
  * Represents SSH_FXP_STATUS
