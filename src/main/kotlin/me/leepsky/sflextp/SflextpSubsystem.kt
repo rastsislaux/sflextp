@@ -2,6 +2,8 @@ package me.leepsky.sflextp
 
 import me.leepsky.sflextp.input.SftpInputReader
 import me.leepsky.sflextp.output.SftpOutputWriter
+import me.leepsky.sflextp.packet.SftpPacket101
+import me.leepsky.sflextp.packet.SftpPacketWithId
 import me.leepsky.sflextp.processing.SftpPacketProcessor
 import org.apache.sshd.server.Environment
 import org.apache.sshd.server.ExitCallback
@@ -10,6 +12,7 @@ import org.apache.sshd.server.command.Command
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.BufferUnderflowException
+import java.util.*
 
 class SflextpSubsystem(
     private val channel: ChannelSession?,
@@ -52,12 +55,21 @@ class SflextpSubsystem(
     }
 
     private fun mainLoop() {
-        val request = try { inp.read() } catch (e: BufferUnderflowException) { return destroy(this.channel) }
-        val response = processor.process(request)
-
-        println("$request -> $response")
-
-        out.write(response)
+        var id = 0
+        try {
+            val request = inp.read()
+            if (request is SftpPacketWithId) {
+                id = request.id
+            }
+            val response = processor.process(request)
+            out.write(response)
+        } catch (ex: BufferUnderflowException) {
+            destroy(this.channel)
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            out.write(SftpPacket101(id, SftpPacket101.Companion.StatusCode.SSH_FX_OP_UNSUPPORTED,
+                ex.message ?: "Unsupported.", Locale.ENGLISH))
+        }
     }
 
 }

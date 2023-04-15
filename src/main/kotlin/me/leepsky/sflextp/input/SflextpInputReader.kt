@@ -4,7 +4,6 @@ import me.leepsky.sflextp.packet.*
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.file.attribute.FileAttribute
 
 open class SflextpInputReader: SftpInputReader {
 

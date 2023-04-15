@@ -36,6 +36,10 @@ sealed class SftpPacket(
     val typeId: Int
 )
 
+sealed interface SftpPacketWithId {
+    val id: Int
+}
+
 /**
  * Represents SSH_FXP_INIT
  */
@@ -54,11 +58,11 @@ data class SftpPacket2(
  * Represents SSH_FXP_OPEN
  */
 data class SftpPacket3(
-    val id: Int,
+    override val id: Int,
     val filename: String,
     val pflags: PFlags,
     val attrs: FileAttributes
-): SftpPacket(SftpPacketType.SSH_FXP_OPEN) {
+): SftpPacket(SftpPacketType.SSH_FXP_OPEN), SftpPacketWithId {
 
     companion object {
 
@@ -79,9 +83,9 @@ data class SftpPacket3(
  * Represents SSH_FXP_CLOSE
  */
 data class SftpPacket4(
-    val id: Int,
+    override val id: Int,
     val handle: String
-): SftpPacket(SftpPacketType.SSH_FXP_CLOSE)
+): SftpPacket(SftpPacketType.SSH_FXP_CLOSE), SftpPacketWithId
 
 /**
  * Represents SFTP_FXP_READ
@@ -90,7 +94,7 @@ data class SftpPacket5(
     /**
      * the request identifier
      */
-    val id: Int,
+    override val id: Int,
 
     /**
      * an open file handle returned by SSH_FXP_OPEN
@@ -106,7 +110,7 @@ data class SftpPacket5(
      * the maximum number of bytes to read
      */
     val len: Int
-): SftpPacket(SftpPacketType.SSH_FXP_READ)
+): SftpPacket(SftpPacketType.SSH_FXP_READ), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_WRITE
@@ -117,7 +121,7 @@ data class SftpPacket6(
     /**
      * The request identifier.
      */
-    val id: Int,
+    override val id: Int,
 
     /**
      * A file handle, returned by SSH_FXP_OPEN.
@@ -133,7 +137,7 @@ data class SftpPacket6(
      * The data to be written.
      */
     val data: ByteArray
-): SftpPacket(SftpPacketType.SSH_FXP_WRITE) {
+): SftpPacket(SftpPacketType.SSH_FXP_WRITE), SftpPacketWithId {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -161,17 +165,17 @@ data class SftpPacket6(
  * Represents SSH_FXP_OPENDIR
  */
 data class SftpPacket11(
-    val id: Int,
+    override val id: Int,
     val path: String
-): SftpPacket(SftpPacketType.SSH_FXP_OPENDIR)
+): SftpPacket(SftpPacketType.SSH_FXP_OPENDIR), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_READDIR
  */
 data class SftpPacket12(
-    val id: Int,
+    override val id: Int,
     val handle: String
-): SftpPacket(SftpPacketType.SSH_FXP_READDIR)
+): SftpPacket(SftpPacketType.SSH_FXP_READDIR), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_REMOVE
@@ -182,13 +186,13 @@ data class SftpPacket13(
     /**
      * The request identifier.
      */
-    val id: Int,
+    override val id: Int,
 
     /**
      * The name of the file to be removed.
      */
     val filename: String
-): SftpPacket(SftpPacketType.SSH_FXP_REMOVE)
+): SftpPacket(SftpPacketType.SSH_FXP_REMOVE), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_MKDIR
@@ -199,7 +203,7 @@ data class SftpPacket14(
     /**
      * The request identifier
      */
-    val id: Int,
+    override val id: Int,
 
     /**
      * Path of the directory to be created
@@ -210,7 +214,7 @@ data class SftpPacket14(
      * Attributes of created directory
      */
     val attrs: FileAttributes
-): SftpPacket(SftpPacketType.SSH_FXP_MKDIR)
+): SftpPacket(SftpPacketType.SSH_FXP_MKDIR), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_RMDIR.
@@ -221,29 +225,29 @@ data class SftpPacket15(
     /**
      * The request identifier.
      */
-    val id: Int,
+    override val id: Int,
 
     /**
      * The directory to be removed.
      */
     val path: String
-): SftpPacket(SftpPacketType.SSH_FXP_RMDIR)
+): SftpPacket(SftpPacketType.SSH_FXP_RMDIR), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_REALPATH
  */
 data class SftpPacket16(
-    val id: Int,
+    override val id: Int,
     val path: String
-): SftpPacket(SftpPacketType.SSH_FXP_REALPATH)
+): SftpPacket(SftpPacketType.SSH_FXP_REALPATH), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_STAT
  */
 data class SftpPacket17(
-    val id: Int,
+    override val id: Int,
     val path: String
-): SftpPacket(SftpPacketType.SSH_FXP_STAT)
+): SftpPacket(SftpPacketType.SSH_FXP_STAT), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_RENAME.
@@ -254,7 +258,7 @@ data class SftpPacket18(
     /**
      * The request identifier.
      */
-    val id: Int,
+    override val id: Int,
 
     /**
      * The name of existing file or directory.
@@ -265,17 +269,17 @@ data class SftpPacket18(
      * The new name for the file or directory.
      */
     val newPath: String
-): SftpPacket(SftpPacketType.SSH_FXP_RENAME)
+): SftpPacket(SftpPacketType.SSH_FXP_RENAME), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_STATUS
  */
 data class SftpPacket101(
-    val id: Int,
+    override val id: Int,
     val statusCode: StatusCode,
     val errorMessage: String,
     val languageTag: Locale
-): SftpPacket(SftpPacketType.SSH_FXP_STATUS) {
+): SftpPacket(SftpPacketType.SSH_FXP_STATUS), SftpPacketWithId {
 
     companion object {
 
@@ -299,9 +303,9 @@ data class SftpPacket101(
  * Represents SSH_FXP_HANDLE
  */
 data class SftpPacket102(
-    val id: Int,
+    override val id: Int,
     val handle: String
-): SftpPacket(SftpPacketType.SSH_FXP_HANDLE)
+): SftpPacket(SftpPacketType.SSH_FXP_HANDLE), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_DATA
@@ -310,7 +314,7 @@ data class SftpPacket103(
     /**
      * the request identifier
      */
-    val id: Int,
+    override val id: Int,
 
     /**
      * An arbitrary byte
@@ -320,7 +324,7 @@ data class SftpPacket103(
      *    other than a regular file.
      */
     val data: ByteArray
-): SftpPacket(SftpPacketType.SSH_FXP_DATA) {
+): SftpPacket(SftpPacketType.SSH_FXP_DATA), SftpPacketWithId {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -346,14 +350,14 @@ data class SftpPacket103(
  * Represents SSH_FXP_NAME
  */
 data class SftpPacket104(
-    val id: Int,
+    override val id: Int,
     val content: List<SftpFile>,
-): SftpPacket(SftpPacketType.SSH_FXP_NAME)
+): SftpPacket(SftpPacketType.SSH_FXP_NAME), SftpPacketWithId
 
 /**
  * Represents SSH_FXP_ATTRS
  */
 data class SftpPacket105(
-    val id: Int,
+    override val id: Int,
     val attrs: FileAttributes
-): SftpPacket(SftpPacketType.SSH_FXP_ATTRS)
+): SftpPacket(SftpPacketType.SSH_FXP_ATTRS), SftpPacketWithId
