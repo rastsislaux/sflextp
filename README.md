@@ -54,6 +54,28 @@ public class Main {
 ```
 This code creates an SFTP server on port 2000 and adds the SFlexTP subsystem to it. It uses the default input reader, output writer, and packet processor, but you can customize these by passing your own instances to the SflextpSubsystemFactory constructor.
 
+## Packet processors
+
+### InMemoryPacketProcessor
+
+This implementation of the SftpPacketProcessor interface processes SFTP packets in memory. It does not store the data to any external file system or storage. This implementation is suitable for scenarios where the SFTP data needs to be processed in-memory, and the data is not required to be stored persistently. It uses Google's JimFS internally.
+
+```kotlin
+ssh.subsystemFactories = listOf(SflextpSubsystemFactory({ SflextpInputReader() },
+                                                        { SflextpOutputWriter() },
+                                                        { InMemoryPacketProcessor() }))
+```
+
+### FilesystemPacketProcessor
+
+This implementation of the SftpPacketProcessor interface processes SFTP packets by storing and retrieving data to and from a file system. This implementation is suitable for scenarios where the SFTP data needs to be stored persistently and accessed later.
+
+```kotlin
+ssh.subsystemFactories = listOf(SflextpSubsystemFactory({ SflextpInputReader() },
+                                                        { SflextpOutputWriter() },
+                                                        { FilesystemPacketProcessor() }))
+```
+
 ## Customization
 To customize the SFlexTP subsystem, you can implement your own input reader, output writer, or packet processor, and pass them to the SflextpSubsystemFactory constructor. For example, here's how you could create a custom packet processor:
 
